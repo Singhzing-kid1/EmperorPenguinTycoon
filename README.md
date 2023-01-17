@@ -1,5 +1,12 @@
 # Emperor Penguin Medival Blacksmith Tycoon
 
+## IMPORTANT INFO
+
+This program was developed using replit and as such will need editing to work on different hardware.  
+This includes but is not limited to editing: The Makefile, Changing the authentication and url of the database.  
+
+Currently it cannot be run any where but Replit. [To Play This Game](https://replit.com/@VeerSingh11/school-submission#main.cpp).  
+Some things to remeber when playing on Replit. You need to be logged in. If you are not then you will cause the program to throw a logic error.
 
 ## Premise:
 
@@ -7,7 +14,7 @@ You are a blacksmith. You have to make Armour, Swords, and Crossbows to supply t
 
 ### Goal:
 
-Make 100 Sharp Swords(or 200 Blunt Swords), 100 Crossbows, 100 Arrows, 200 sets of Iron Armour in 60 ingame days.
+Make 100 Sharp Swords(or 200 Blunt Swords), 100 Crossbows, 1000 Arrows, 200 sets of Iron Armour in 60 ingame days.
 
 ## Backstory:
 
@@ -24,7 +31,7 @@ Iron, Wood, String, Stone, Feathers, Penguincoin
 - 2 Iron + 1 wood = Blunt Iron Sword
 - 1 Stone + 2 Wood + 1 String + 1 iron = Sharpening Wheel
 - 8 Iron = iron armour
-- 3 wood + 1 stone + 3 feathers = arrow
+- 3 wood + 1 stone + 3 feathers = arrow `note: times the recipe ingredients and output by ten`
 - 3 wood + 2 iron + 1 string = crossbow
 - 1 Blunt Iron Sword + Sharpening Wheel = Sharp Iron Sword
 
@@ -87,39 +94,6 @@ Iron, Wood, String, Stone, Feathers, Penguincoin
 - Sellable: yes
 
 
-## Features:
-
-### Must Have:
-
-- Crafting
-- Store
-
-
-### Nice To Have:
-
-- Good UI
-- Calendar View
-- Acheivments
-
-## Completion Schedule:
-
-Main Menu Logic Completion: Sat 24 Dec 2022  
-
-Store Logic Completion: Wed 28 Dec 2022  
-
-Crafting Logic Completion: Sun 1 Jan 2023  
-
-Main Menu UI Completion: Thu 5 Jan 2023  
-
-Store UI Completion: Mon 9 Jan 2023  
-
-Crafting UI Completion: Fri 13 Jan 2023  
-
-Acheivements Logic: Fri 13 Jan 2023 <-- Only if there is time  
-
-Calendar Logic Completion: Sun 15 2023 <-- Only if there is time  
-
-Calendar UI Completion: Mon 16 2023 <-- Only if there is time  
 
 
 
