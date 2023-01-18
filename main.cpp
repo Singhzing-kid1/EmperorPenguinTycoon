@@ -1,14 +1,8 @@
 #include <iostream>
 #include <sstream>
 #include <vector>
-#include <curlpp/cURLpp.hpp>
-#include <curlpp/Easy.hpp>
-#include <curlpp/Options.hpp>
-#include <curlpp/Exception.hpp>
 
 using namespace std;
-using namespace curlpp;
-using namespace curlpp::options;
 
 struct sharpeningWheel{ // create a struct to store variables for the sharpening wheels
   int amount;
@@ -24,166 +18,6 @@ struct resources{ // create another struct for ever other item, item price per u
 }; 
 
 typedef struct resources inventory; // create a 'type' that inherits the values of the two structs above ^^
-
-class saveStateManager { // this class has methods for all the stuff needed to create, save and load game save states. It uses REPLIT's builtin database
-  public:
-    void initSaveState(string URL, string JWT) {
-      Cleanup cleaner; // create an instance of curlpp::Cleanup
-
-      Easy initRequest; // create our request handler using curlpp::Easy
-      initRequest.setOpt(new options::Url(URL + "/")); // give it the database url --> this is the environment variable that replit gives as part of the builtin database
-      initRequest.setOpt(new options::HttpHeader({"Authorization: Bearer " + JWT})); // the database uses a JWT(JSON Web Token) for authentication. This needs to passed into the requests header
-
-      string data = "penguinCoins=0&wood=0&iron=0&stone=0&string=0&feathers=0&bluntSword=0&sharpSword=0&arrows=0&crossbow=0&armor=0&sharpeningWheelAmount=0&sharpeningWheelUses=0&day=1&transactions=0&firstRun=1"; // key-value pair data.
-      
-      initRequest.setOpt(new options::PostFields(data)); // pass the data to the post field
-      initRequest.setOpt(new options::PostFieldSize(data.length())); // tell the server the length of the data
-
-      initRequest.perform(); // send the request
-    }
-
-    inventory loadSave(string URL, string JWT){
-      inventory b; // create an instance of the inventory type
-      
-      Cleanup cleaner; // create an instance of curlpp:Cleanup
-      
-      vector<string> keys = {"penguinCoins", "wood", "iron", "string", "stone", "feathers", "bluntSword", "sharpSword", "arrows", "crossbow", "armor", "sharpeningWheelAmount", "sharpeningWheelUses", "day", "transactions"}; // create a vector that stores all the keys for gameplay data we need to get from the database
-
-      for (auto key : keys){ // loop through the vector of keys
-        Easy loadRequest; // create our handler
-
-        ostringstream os; // create a string stream to put the request output into so we can store the data for later use
-
-        loadRequest.setOpt(new options::Url(URL + "/" + key)); 
-        loadRequest.setOpt(new options::HttpHeader({"Authorization: Bearer " + JWT}));
-        loadRequest.setOpt(new options::WriteStream(&os)); // tell the request to direct its out put to the stringstream variable(defaulte is cout)
-        loadRequest.setOpt(new options::HttpGet(true)); // set the request type to an Http GET request
-
-        loadRequest.perform(); // send the request
-
-        if (key == "penguinCoins"){ // check what the current key is and store the output of the request in the proper variable
-          b.penguinCoin = stoi(os.str());
-        } else if (key == "wood"){
-          b.wood = stoi(os.str());
-        } else if (key == "iron"){
-          b.iron = stoi(os.str());
-        } else if (key == "string"){
-          b.string = stoi(os.str());
-        } else if (key == "feathers"){
-          b.feathers = stoi(os.str());
-        } else if (key == "bluntSword"){
-          b.bluntSword = stoi(os.str());
-        } else if (key == "sharpSword"){
-          b.sharpSword = stoi(os.str());
-        } else if (key == "arrows"){
-          b.arrows = stoi(os.str());
-        } else if (key == "crossbow"){
-          b.crossbow = stoi(os.str());
-        } else if (key == "armor"){
-          b.armor = stoi(os.str());
-        } else if (key == "sharpeningWheelAmount"){
-          b.sharpWheels.amount = stoi(os.str());
-        } else if (key == "sharpeningWheelUses"){
-          b.sharpWheels.uses = stoi(os.str());
-        } else if (key == "day"){
-          b.date = stoi(os.str());
-        } else if (key == "transactions"){
-          b.transactions = stoi(os.str());
-        } else if (key == "stone"){
-          b.stone = stoi(os.str());
-        }
-        
-      }
-
-      b.woodPPU = 2; // set other default values that are not stored in the database
-      b.ironPPU = 4;
-      b.stringPPU = 3;
-      b.stonePPU = 1;
-      b.feathersPPU = 2;
-
-      b.sharpSwordPPU = 15;
-      b.bluntSwordPPU = 5;
-      b.armorPPU = 10;
-      b.arrowsPPU = 2;
-      b.crossbowPPU = 10;
-
-      b.neededArmor = 200;
-      b.neededSharpSword = 100;
-      b.neededBluntSword = 200;
-      b.neededArrows = 1000;
-      b.neededCrossbow = 100;
-
-      b.soldArmor = 0;
-      b.soldArrows = 0;
-      b.soldBluntSword = 0;
-      b.soldCrossbow = 0;
-      b.soldSharpSword = 0;
-
-      return b; // return the inventory variable so other functions can use it
-    }
-
-    void saveState(inventory b, string URL, string JWT){
-      Cleanup cleaner; // create our cleaner
-
-      vector<string> keys = {"penguinCoins", "wood", "iron", "string", "stone", "feathers", "bluntSword", "sharpSword", "arrows", "crossbow", "armor", "sharpeningWheelAmount", "sharpeningWheelUses", "day", "transactions"};
-
-      for (auto key : keys){ // this loop deletes the pre existing keys in the database so we can stay at a constant amount of 16 keys.
-        Easy deleteRequest; // create a handler
-
-        deleteRequest.setOpt(new options::Url(URL + "/" + key)); // url
-        deleteRequest.setOpt(new options::HttpHeader({"Authorization: Bearer " + JWT})); // auth
-
-        deleteRequest.setOpt(new options::CustomRequest("DELETE")); // set request type to DELETE
-
-        deleteRequest.perform(); // send request
-      }
-
-      
-      Easy saveRequest; // create a handler
-
-      saveRequest.setOpt(new options::Url(URL)); // url
-      saveRequest.setOpt(new options::HttpHeader({"Authorization: Bearer " + JWT})); // auth
-
-      string data = "penguinCoins=" + to_string(b.penguinCoin) + "&wood=" + to_string(b.wood) + "&iron=" + to_string(b.iron) + "&stone=" + to_string(b.stone) + "&string=" + to_string(b.string) + "&feathers=" + to_string(b.feathers) + "&bluntSword=" + to_string(b.bluntSword) + "&sharpSword=" + to_string(b.sharpSword) + "&arrows=" + to_string(b.arrows) + "&crossbow=" + to_string(b.crossbow) + "&armor=" + to_string(b.armor) + "&sharpeningWheelAmount=" + to_string(b.sharpWheels.amount) + "&sharpeningWheelUses=" + to_string(b.sharpWheels.uses) + "&day=" + to_string(b.date) + "&transactions=" + to_string(b.transactions) + "&firstRun=0"; // data from the invetory variable 'b' that was passed into this method
-
-      saveRequest.setOpt(new options::PostFields(data)); // set the post fields
-      saveRequest.setOpt(new options::PostFieldSize(data.length())); // set the pot fields length
-
-      saveRequest.perform(); // send request
-    }
-
-    bool checkForExistingGame(string URL, string JWT){
-      Cleanup cleaner; // cleaner
-
-      Easy checkRequest; // handler
-
-      ostringstream os; 
-      int response;
-
-      checkRequest.setOpt(new options::Url(URL + "/firstRun")); // url
-      checkRequest.setOpt(new options::HttpHeader({"Authorization: Bearer" + JWT})); // auth
-      checkRequest.setOpt(new options::WriteStream(&os)); // storage of output
-      checkRequest.setOpt(new options::HttpGet(true)); // set as GET request
-
-      checkRequest.perform(); // send request
-
-      try{
-        response = stoi(os.str());
-      } catch (std::invalid_argument) { // if the variable does not exist on the database it will return an error std::invalid_argument
-        response = 404; // if it does then response to 404 becuase value does not exist
-      }
-
-      if (response == 404){ // the bools being returned, tell the program whether or the user has played and saved their progress in the game before
-        return false;
-      } else{
-        if (response == 1){
-          return false;
-        } else {
-          return true;
-        }
-      }
-    }
-};
 
 string dynamicPrinting(int spaces, int item){ // ui string printing
 
@@ -724,21 +558,16 @@ inventory crafting(inventory b){ // crafting woo!
 }
 
 
-void mainMenu(bool loadExisting, string URL, string JWT){
+void mainMenu(){
   string choice;
   
   bool won = false;
   bool continueGame = false;
 
   inventory b; // create the inventory
-  saveStateManager saveTool; // get the game save state code ready
 
-  if (!loadExisting){ // check if the user does not want to continue their game
-    b = setDefault(); // set the inventory values to default and create the key-value pairs on the database
-    saveTool.initSaveState(URL, JWT);
-  } else {
-    b = saveTool.loadSave(URL, JWT); // if they do want to, load the pre-existing gamedata from the database
-  }
+  b = setDefault(); // set the inventory values to default  
+
   
   do{
 
@@ -828,11 +657,10 @@ void mainMenu(bool loadExisting, string URL, string JWT){
       cout << "|-----------------------------------|------------------|------------------|------------------|\n";
       cout << "Your Choice: ";
       cin >> choice;
-      if(choice == "0") {saveTool.saveState(b, URL, JWT); break;} // if you choice Save+Exit, it first saves then breaks out of the loop
-      if(choice == "1") break; // if you choose Exit, you break out of the loop without saving
-      if(choice == "2") b = store(b);   // choice logic
-      if(choice == "3") b = crafting(b); // the returned inventory variables are outputted here and are stored in the main game loop. 
-      if(choice == "4") {b.date++; b.transactions = 0;}        // this means that the same variable can be passed through functions to give it the inventory variables.
+
+      if(choice == "1") b = store(b);   // choice logic
+      if(choice == "2") b = crafting(b); // the returned inventory variables are outputted here and are stored in the main game loop. 
+      if(choice == "3") {b.date++; b.transactions = 0;}        // this means that the same variable can be passed through functions to give it the inventory variables.
   
       if (b.transactions == 10){ // the 10:1 transactions to date thingy
         b.date++;
@@ -846,17 +674,7 @@ void mainMenu(bool loadExisting, string URL, string JWT){
 
 int main() {
 
-  saveStateManager saveCheck; // create an instance of the save state manager JUST for checking if there is or is not a pre-existing game
-  string URL = getenv("REPLIT_DB_URL"); // get the url of the database
-  string JWT;
-  size_t pos = URL.find_last_of("/");  // copy and save the JWT from the url --> just happens to be part of the path
-  if (pos != string::npos) {
-    JWT = URL.substr(pos);
-  }
-
   string choice;
-
-  bool loadSave = saveCheck.checkForExistingGame(URL, JWT); // run the check
   
   cout << " '||''''|                                                   '||'''|,                                               \n" // display cool graphic
 "  ||   .                                                     ||   ||                                  ''           \n"
@@ -871,19 +689,11 @@ int main() {
 "                              ||     `|..||  ||    ||  || ||  ||  ||  ||                                           \n"
 "                             .||.        ||  `|..' `|..|' `|..|' .||  ||.                                          \n"
 "                                      ,  |'                                                                        \n"
-"                                       ''                                                                          \n";
+"                                       ''                                                                          \n"
+"                                           Press Any Key to Play                                                   \n";
+ 
 
-  if (!loadSave){ // never played before? then you can only create a new game
-    cout << "                                           Press Any Key to Play                                                   \n";
-  } else{ // if you have played before you can create a new game, or continue an old one
-    cout << "                                               1) New Game                                                         \n"
-            "                                             2) Continue Game                                                      \n";
-  }
-  cin >> choice; // get users choice
-
-  if (loadSave && choice == "1"){ // choice only matters if they have a pre-existing game right? and if the user wants to create a new game there is no point of loading the old one
-    loadSave = false;
-  }
+ cin >> choice; // wait for input
   
-  mainMenu(loadSave, URL, JWT); // runs the main game loop
+  mainMenu(); // runs the main game loop
 }
