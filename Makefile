@@ -1,7 +1,13 @@
 # MAKEFILE
 
 CXX = g++
-CFLAGS = -w -g 
+CFLAGS = -w -g -std=c++14
+
+#libraries
+
+INCLUDE =  -Iusr/local/include
+LDFLAGS = -arch arm64 -Lusr/local/lib
+LDLIBS = -ljsoncpp
 
 # DETAILS
 
@@ -11,4 +17,7 @@ OUT = main
 all: build
 
 build: $(SOURCE)
-	$(CXX) -o $(OUT) $(CFLAGS) $(SOURCE)
+	$(CXX) -o $(OUT) $(INCLUDE) $(CFLAGS) $(LDFLAGS) $(LDLIBS) $(SOURCE)
+
+clean:
+	rm -f *o $(OUT)

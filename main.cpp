@@ -1,8 +1,10 @@
 #include <iostream>
-#include <sstream>
+#include <fstream>
 #include <vector>
+#include <json/json.h>
 
 using namespace std;
+using namespace Json;
 
 struct sharpeningWheel{ // create a struct to store variables for the sharpening wheels
   int amount;
@@ -18,6 +20,153 @@ struct resources{ // create another struct for ever other item, item price per u
 }; 
 
 typedef struct resources inventory; // create a 'type' that inherits the values of the two structs above ^^
+
+class saveStateManager{
+  public:
+    void iniitialization(string saveFilePath){ // this will be run when the game starts up for the first time. 
+      Value save;
+      StyledWriter writer;
+      ofstream saveFile(saveFilePath);
+
+      save["penguinCoin"] = 0;
+      save["wood"] = 0;
+      save["iron"] = 0;
+      save["string"] = 0;
+      save["stone"] = 0;
+      save["feathers"] = 0;
+      save["bluntSword"] = 0;
+      save["sharpSword"] = 0;
+      save["armor"] = 0;
+      save["sharpWheelsAmount"] = 0;
+      save["sharpWheelsUses"] = 0;
+      save["arrows"] = 0;
+      save["crossbow"] = 0;
+      save["soldBluntSword"] = 0;
+      save["soldSharpSword"] = 0;
+      save["soldArmor"] = 0;
+      save["soldArrows"] = 0;
+      save["soldCrossbow"] = 0;
+      save["date"] = 1;
+      save["transactions"] = 0;
+      save["isExistingGame"] = false;
+
+      string saveString = writer.write(save);
+
+      saveFile << saveString;
+
+      saveFile.close();
+    }
+
+    inventory load(string loadFilePath){ // loading the inventory
+      inventory b;
+      ifstream loadFile(loadFilePath);
+      string jsonString((istreambuf_iterator<char>(loadFile)), istreambuf_iterator<char>());
+      Value load;
+      Reader reader;
+
+      reader.parse(jsonString, load);
+
+      b.penguinCoin = load["penguinCoin"].asInt();
+
+      b.wood = load["wood"].asInt();
+      b.iron = load["iron"].asInt();
+      b.string = load["string"].asInt();
+      b.stone = load["stone"].asInt();
+      b.feathers = load["feathers"].asInt();
+
+      b.bluntSword = load["bluntSword"].asInt();
+      b.sharpSword = load["sharpSword"].asInt();
+      b.armor = load["armor"].asInt();
+      b.sharpWheels.amount = load["sharpWheelsAmount"].asInt();
+      b.sharpWheels.uses = load["sharpWheelsUses"].asInt();
+      b.arrows = load["arrows"].asInt();
+      b.crossbow = load["crossbow"].asInt();
+
+      b.soldBluntSword = load["soldBluntSword"].asInt();
+      b.soldSharpSword = load["soldSharpSword"].asInt();
+      b.soldArmor = load["soldArmor"].asInt();
+      b.soldArrows = load["soldArrows"].asInt();
+      b.soldCrossbow = load["soldCrossbow"].asInt();
+
+      b.date = load["date"].asInt();
+      b.transactions = load["transactions"].asInt();
+
+      b.woodPPU = 2;
+      b.ironPPU = 4;
+      b.stringPPU = 3;
+      b.stonePPU = 1;
+      b.feathersPPU = 2;
+
+      b.sharpSwordPPU = 15;
+      b.bluntSwordPPU = 5;
+      b.armorPPU = 10;
+      b.arrowsPPU = 2;
+      b.crossbowPPU = 10;
+
+      b.neededArmor = 200;
+      b.neededSharpSword = 100;
+      b.neededBluntSword = 200;
+      b.neededArrows = 1000;
+      b.neededCrossbow = 100;
+
+      return b;
+    }
+
+    void save(inventory b, string saveFilePath){ // saving the inventory
+      ofstream saveFile(saveFilePath);
+      Value save;
+      StyledWriter writer;
+
+      save["penguinCoin"] = b.penguinCoin;
+      save["wood"] = b.wood;
+      save["iron"] = b.iron;
+      save["string"] = b.string;
+      save["stone"] = b.stone;
+      save["feathers"] = b.feathers;
+      save["bluntSword"] = b.bluntSword;
+      save["sharpSword"] = b.sharpSword;
+      save["armor"] = b.armor;
+      save["sharpWheelsAmount"] = b.sharpWheels.amount;
+      save["sharpWheelsUses"] = b.sharpWheels.uses;
+      save["arrows"] = b.arrows;
+      save["crossbow"] = b.crossbow;
+      save["soldBluntSword"] = b.soldBluntSword;
+      save["soldSharpSword"] = b.soldSharpSword;
+      save["soldArmor"] = b.soldArmor;
+      save["soldArrows"] = b.soldArrows;
+      save["soldCrossbow"] = b.soldCrossbow;
+      save["date"] = b.date;
+      save["transactions"] = b.transactions;
+      save["isExistingGame"] = true;
+
+      string saveString = writer.write(save);
+
+      saveFile << saveString;
+      saveFile.close();
+    }
+
+    bool checker(string loadFilePath){ // check if the save file exists
+      ifstream loadFile;
+
+      try{
+        loadFile.open(loadFilePath);
+      } catch (ios_base::failure){
+        return false;
+      }
+
+      string jsonString((istreambuf_iterator<char>(loadFile)), istreambuf_iterator<char>());
+      Value load;
+      Reader reader;
+
+      reader.parse(jsonString, load);
+
+      return load["isExistingGame"].asBool();
+    }
+
+    void deleteSave(string deleteFilePath){ // delete the save file
+      remove(deleteFilePath.c_str());
+    }
+};
 
 string dynamicPrinting(int spaces, int item){ // ui string printing
 
@@ -558,15 +707,40 @@ inventory crafting(inventory b){ // crafting woo!
 }
 
 
-void mainMenu(){
+void mainMenu(bool loadExisting, int gameSaveSlot){
   string choice;
   
   bool won = false;
   bool continueGame = false;
+  string slot1 = "saveSlot1.json";
+  string slot2 = "saveSlot2.json";
+  string slot3 = "saveSlot3.json";
+
+  saveStateManager saveTool;
+
+  bool exitToMainMenu = false;
 
   inventory b; // create the inventory
 
-  b = setDefault(); // set the inventory values to default  
+  if (loadExisting){
+    if (gameSaveSlot == 1){
+      b = saveTool.load(slot1);
+    } else if (gameSaveSlot == 2){
+      b = saveTool.load(slot2);
+    } else if (gameSaveSlot == 3){
+      b = saveTool.load(slot3);
+    }
+  } else{
+    if (gameSaveSlot == 1){
+      saveTool.iniitialization(slot1);
+    } else if (gameSaveSlot == 2){
+      saveTool.iniitialization(slot2);
+    } else if (gameSaveSlot == 3){
+      saveTool.iniitialization(slot3);
+    }
+
+    b = setDefault();
+  }  
 
   
   do{
@@ -657,10 +831,24 @@ void mainMenu(){
       cout << "|-----------------------------------|------------------|------------------|------------------|\n";
       cout << "Your Choice: ";
       cin >> choice;
+      
+      if(choice == "0") {
+        if(gameSaveSlot == 1){
+          saveTool.save(b, slot1);
+          exitToMainMenu = true;
+        } else if(gameSaveSlot == 2){
+          saveTool.save(b, slot2);
+          exitToMainMenu = true;
+        } else if(gameSaveSlot == 3){
+          saveTool.save(b, slot3);
+          exitToMainMenu = true;
+        }
+      }
 
-      if(choice == "1") b = store(b);   // choice logic
-      if(choice == "2") b = crafting(b); // the returned inventory variables are outputted here and are stored in the main game loop. 
-      if(choice == "3") {b.date++; b.transactions = 0;}        // this means that the same variable can be passed through functions to give it the inventory variables.
+      if(choice == "1") exitToMainMenu = true; // exit the game loop
+      if(choice == "2") b = store(b);   // choice logic
+      if(choice == "3") b = crafting(b); // the returned inventory variables are outputted here and are stored in the main game loop. 
+      if(choice == "4") {b.date++; b.transactions = 0;}        // this means that the same variable can be passed through functions to give it the inventory variables.
   
       if (b.transactions == 10){ // the 10:1 transactions to date thingy
         b.date++;
@@ -669,31 +857,94 @@ void mainMenu(){
     }
     
     
-  }while((!won || continueGame) && choice != "0");
+  }while(((!won || continueGame) && choice != "0") || !exitToMainMenu); // if the player has not won, or they want to continue playing, the game loop runs.
 }
 
 int main() {
 
-  string choice;
   
-  cout << " '||''''|                                                   '||'''|,                                               \n" // display cool graphic
-"  ||   .                                                     ||   ||                                  ''           \n"
-"  ||'''|  '||),,(|,  '||''|, .|''|, '||''| .|''|, '||''|     ||...|' .|''|, `||''|,  .|''|, '||  ||`  ||  `||''|,  \n"
-"  ||       || || ||   ||  || ||..||  ||    ||  ||  ||        ||      ||..||  ||  ||  ||  ||  ||  ||   ||   ||  ||  \n"
-" .||....| .||    ||.  ||..|' `|...  .||.   `|..|' .||.      .||      `|...  .||  ||. `|..||  `|..'|. .||. .||  ||. \n"
-"                      ||                                                                 ||                        \n"
-"                     .||                                                              `..|'                        \n"
-"                           |''||''|                                                                                \n"
-"                              ||                                                                                   \n"
-"                              ||    '||  ||` .|'', .|''|, .|''|, `||''|,                                           \n"
-"                              ||     `|..||  ||    ||  || ||  ||  ||  ||                                           \n"
-"                             .||.        ||  `|..' `|..|' `|..|' .||  ||.                                          \n"
-"                                      ,  |'                                                                        \n"
-"                                       ''                                                                          \n"
-"                                           Press Any Key to Play                                                   \n";
+
+  string choice;
+  bool loadExisting;
+  
+
+  do {
+
+    saveStateManager checker;
+
+    system("clear");
+
+    cout << " '||''''|                                                   '||'''|,                                               \n" // display cool graphic // | Continue:          Enter 1     | // | New Game:          Enter 1     |
+            "  ||   .                                                     ||   ||                                  ''           \n"
+            "  ||'''|  '||),,(|,  '||''|, .|''|, '||''| .|''|, '||''|     ||...|' .|''|, `||''|,  .|''|, '||  ||`  ||  `||''|,  \n"
+            "  ||       || || ||   ||  || ||..||  ||    ||  ||  ||        ||      ||..||  ||  ||  ||  ||  ||  ||   ||   ||  ||  \n"
+            " .||....| .||    ||.  ||..|' `|...  .||.   `|..|' .||.      .||      `|...  .||  ||. `|..||  `|..'|. .||. .||  ||. \n"
+            "                      ||                                                                 ||                        \n"
+            "                     .||                                                              `..|'                        \n"
+            "                           |''||''|                                                                                \n"
+            "                              ||                                                                                   \n"
+            "                              ||    '||  ||` .|'', .|''|, .|''|, `||''|,                                           \n"
+            "                              ||     `|..||  ||    ||  || ||  ||  ||  ||                                           \n"
+            "                             .||.        ||  `|..' `|..|' `|..|' .||  ||.                                          \n"
+            "                                      ,  |'                                                                        \n"
+            "                                       ''                                                                          \n"
+            "                                       |--------------------------------|                                          \n"
+            "                                       | Save Slot 1:                   |                                          \n";
+
+    checker.checker("saveSlot1.json") ?
+    cout << "                                       | Continue:          Enter 1     |                                          \n" : 
+    cout << "                                       | New Game:          Enter 1     |                                          \n";
+
+    cout << "                                       | Delete Save:       Enter 2     |                                          \n"
+            "                                       |--------------------------------|                                          \n"
+            "                                       | Save Slot 2:                   |                                          \n";
+
+    checker.checker("saveSlot2.json") ?
+    cout << "                                       | Continue:          Enter 3     |                                          \n" :
+    cout << "                                       | New Game:          Enter 3     |                                          \n";
+
+    cout << "                                       | Delete Save:       Enter 4     |                                          \n"
+            "                                       |--------------------------------|                                          \n"
+            "                                       | Save Slot 3:                   |                                          \n";
+
+    checker.checker("saveSlot3.json") ?
+    cout << "                                       | Continue:          Enter 5     |                                          \n" :
+    cout << "                                       | New Game:          Enter 5     |                                          \n";
+
+    cout << "                                       | Delete Save:       Enter 6     |                                          \n"
+            "                                       |--------------------------------|                                          \n"
+            "                                       | Exit:              Enter 0     |                                          \n"
+            "                                       |--------------------------------|                                          \n";
  
 
- cin >> choice; // wait for input
-  
-  mainMenu(); // runs the main game loop
+    cin >> choice; // wait for input
+
+    if(choice == "1"){
+      loadExisting = checker.checker("saveSlot1.json");
+      mainMenu(loadExisting, stoi(choice));
+    } else if(choice == "2"){
+      checker.deleteSave("saveSlot1.json");
+      choice = "10";
+    } else if(choice == "3"){
+      loadExisting = checker.checker("saveSlot2.json");
+      mainMenu(loadExisting, stoi(choice));
+    } else if(choice == "4"){
+      checker.deleteSave("saveSlot2.json");
+      choice = "10";
+    } else if(choice == "5"){
+      loadExisting = checker.checker("saveSlot3.json");
+      mainMenu(loadExisting, stoi(choice));
+    } else if(choice == "6"){
+      checker.deleteSave("saveSlot3.json");
+      choice = "10";
+    } else if(choice == "0"){
+      break;
+    } else {
+      cout << "You have entered an incorrect input.\nInput can only be 1, 2, or 3, not " << choice << ".\nPress any key + enter to continue.";
+      choice = "10";
+      string garbage;
+      cin >> garbage;
+    }
+
+  } while (choice == "10");
 }
