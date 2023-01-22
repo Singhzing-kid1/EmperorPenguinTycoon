@@ -6,7 +6,7 @@ CFLAGS = -w -g -std=c++14
 #libraries
 
 INCLUDE =  -Iusr/local/include
-LDFLAGS = -arch arm64 -Lusr/local/lib
+LDFLAGS = -Lusr/local/lib
 LDLIBS = -ljsoncpp
 
 # DETAILS
