@@ -9,13 +9,13 @@ on:
 jobs:
   build:
 
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
 
     steps:
     - uses: actions/checkout@v3
     
     - name: Install jsoncpp
-      run: sudo apt-get install libjsoncpp-dev 
+      run: brew install jsoncpp
 
     - name: Build ./main
       run: make
